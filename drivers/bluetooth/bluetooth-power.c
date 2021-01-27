@@ -631,8 +631,9 @@ static int bt_power_probe(struct platform_device *pdev)
 		goto free_pdata;
 	}
 
-	if (bluetooth_power_rfkill_probe(pdev) < 0)
-		goto free_pdata;
+//	hybris: disable rfkill for now	
+//	if (bluetooth_power_rfkill_probe(pdev) < 0)
+//		goto free_pdata;
 
 	btpdev = pdev;
 
