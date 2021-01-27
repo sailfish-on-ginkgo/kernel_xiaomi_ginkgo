@@ -125,6 +125,8 @@ static void  __copy_atomic_commit_struct(struct mdp_layer_commit  *commit,
 
 	commit->version = commit32->version;
 	commit->commit_v1.flags = commit32->commit_v1.flags;
+	commit->commit_v1.release_fence = commit32->commit_v1.release_fence;
+		commit->commit_v1.retire_fence = commit32->commit_v1.retire_fence;
 	commit->commit_v1.input_layer_cnt =
 		commit32->commit_v1.input_layer_cnt;
 	commit->commit_v1.left_roi = commit32->commit_v1.left_roi;
