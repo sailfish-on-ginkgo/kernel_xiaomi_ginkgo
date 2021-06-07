@@ -41,7 +41,6 @@
 #include <net/cfg80211.h>
 #include <net/ieee80211_radiotap.h>
 #include "sap_api.h"
-#include "sme_power_save_api.h"
 #include "wlan_hdd_wmm.h"
 #include "wlan_hdd_tdls.h"
 #include "wlan_hdd_ocb.h"
@@ -2557,6 +2556,7 @@ void hdd_reset_tcp_delack(struct hdd_context *hdd_ctx)
  *
  * Return: True if vote level is high
  */
+#ifdef RX_PERFORMANCE
 bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx)
 {
 	if (hdd_ctx->cur_vote_level < PLD_BUS_WIDTH_HIGH)
@@ -2564,4 +2564,5 @@ bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx)
 	else
 		return true;
 }
+#endif
 #endif /* MSM_PLATFORM */

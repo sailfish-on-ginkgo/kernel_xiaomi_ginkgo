@@ -86,7 +86,7 @@ struct ol_rx_ind_record {
 
 #ifdef OL_RX_INDICATION_RECORD
 static uint32_t ol_rx_ind_record_index;
-static struct ol_rx_ind_record
+struct ol_rx_ind_record
 	      ol_rx_indication_record_history[OL_RX_INDICATION_MAX_RECORDS];
 
 /**
@@ -1159,8 +1159,8 @@ ol_rx_filter(struct ol_txrx_vdev_t *vdev,
 
 #ifdef WLAN_FEATURE_TSF_PLUS
 #ifdef CONFIG_HL_SUPPORT
-static inline void ol_rx_timestamp(struct cdp_cfg *cfg_pdev,
-				   void *rx_desc, qdf_nbuf_t msdu)
+void ol_rx_timestamp(struct cdp_cfg *cfg_pdev,
+		     void *rx_desc, qdf_nbuf_t msdu)
 {
 	struct htt_rx_ppdu_desc_t *rx_ppdu_desc;
 
@@ -1191,8 +1191,8 @@ static inline void ol_rx_timestamp_update(ol_txrx_pdev_handle pdev,
 	}
 }
 #else
-static inline void ol_rx_timestamp(struct cdp_cfg *cfg_pdev,
-				   void *rx_desc, qdf_nbuf_t msdu)
+void ol_rx_timestamp(struct cdp_cfg *cfg_pdev,
+		     void *rx_desc, qdf_nbuf_t msdu)
 {
 	struct htt_host_rx_desc_base *rx_mpdu_desc = rx_desc;
 	uint32_t tsf64_low32, tsf64_high32;
@@ -1264,8 +1264,8 @@ static inline void ol_rx_timestamp_update(ol_txrx_pdev_handle pdev,
 }
 #endif
 #else
-static inline void ol_rx_timestamp(struct cdp_cfg *cfg_pdev,
-				   void *rx_desc, qdf_nbuf_t msdu)
+void ol_rx_timestamp(struct cdp_cfg *cfg_pdev,
+		     void *rx_desc, qdf_nbuf_t msdu)
 {
 }
 
@@ -1518,9 +1518,7 @@ void ol_rx_peer_init(struct ol_txrx_pdev_t *pdev, struct ol_txrx_peer_t *peer)
 	peer->keyinstalled = 0;
 
 	peer->last_assoc_rcvd = 0;
-	peer->last_disassoc_rcvd = 0;
-	peer->last_deauth_rcvd = 0;
-
+	peer->last_disassoc_deauth_rcvd = 0;
 	qdf_atomic_init(&peer->fw_pn_check);
 }
 
@@ -1529,8 +1527,7 @@ ol_rx_peer_cleanup(struct ol_txrx_vdev_t *vdev, struct ol_txrx_peer_t *peer)
 {
 	peer->keyinstalled = 0;
 	peer->last_assoc_rcvd = 0;
-	peer->last_disassoc_rcvd = 0;
-	peer->last_deauth_rcvd = 0;
+	peer->last_disassoc_deauth_rcvd = 0;
 	ol_rx_reorder_peer_cleanup(vdev, peer);
 }
 
