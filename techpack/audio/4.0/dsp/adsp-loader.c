@@ -7,7 +7,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/err.h>
-#include <linux/string.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <ipc/apr.h>
@@ -23,6 +22,7 @@
 #define SSR_RESET_CMD 1
 #define IMAGE_UNLOAD_CMD 0
 #define MAX_FW_IMAGES 4
+#define ADSP_FW_NAME_MAX_LENGTH 5
 
 static ssize_t adsp_boot_store(struct kobject *kobj,
 	struct kobj_attribute *attr,
@@ -324,14 +324,13 @@ static int adsp_loader_probe(struct platform_device *pdev)
 {
 	struct adsp_loader_private *priv = NULL;
 	struct nvmem_cell *cell;
-	size_t len;
+	ssize_t len;
 	u32 *buf;
 	const char **adsp_fw_name_array = NULL;
 	int adsp_fw_cnt;
 	u32* adsp_fw_bit_values = NULL;
 	int i;
-	int fw_name_size;
-	u32 adsp_var_idx = 0;
+	u32 adsp_var_idx;
 	int ret = 0;
 
 	ret = adsp_loader_init_sysfs(pdev);
@@ -349,11 +348,11 @@ static int adsp_loader_probe(struct platform_device *pdev)
 	}
 	buf = nvmem_cell_read(cell, &len);
 	nvmem_cell_put(cell);
-	if (IS_ERR_OR_NULL(buf) || len <= 0 || len > sizeof(u32)) {
+	if (IS_ERR_OR_NULL(buf)) {
 		dev_dbg(&pdev->dev, "%s: FAILED to read nvmem cell \n", __func__);
 		goto wqueue;
 	}
-	memcpy(&adsp_var_idx, buf, len);
+	adsp_var_idx = (*buf);
 	kfree(buf);
 
 	/* Get count of fw images */
@@ -399,14 +398,12 @@ static int adsp_loader_probe(struct platform_device *pdev)
 
 	for (i = 0; i < adsp_fw_cnt; i++) {
 		if (adsp_fw_bit_values[i] == adsp_var_idx) {
-			fw_name_size = strlen(adsp_fw_name_array[i]) + 1;
 			priv->adsp_fw_name = devm_kzalloc(&pdev->dev,
-						fw_name_size,
-						GFP_KERNEL);
+					ADSP_FW_NAME_MAX_LENGTH, GFP_KERNEL);
 			if (!priv->adsp_fw_name)
 				goto wqueue;
 			strlcpy(priv->adsp_fw_name, adsp_fw_name_array[i],
-				fw_name_size);
+				sizeof(priv->adsp_fw_name));
 			break;
 		}
 	}

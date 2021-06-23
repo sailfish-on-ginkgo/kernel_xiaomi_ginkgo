@@ -7,18 +7,24 @@ else
 endif
 
 
+
 ifeq ($(KERNEL_BUILD), 1)
 	# These are configurable via Kconfig for kernel-based builds
 	# Need to explicitly configure for Android-based builds
-	AUDIO_BLD_DIR := $(shell pwd)/kernel/msm-4.14
+	AUDIO_BLD_DIR := $(ANDROID_BUILD_TOP)/kernel/msm-4.9
 	AUDIO_ROOT := $(AUDIO_BLD_DIR)/techpack/audio
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
-	ifeq ($(CONFIG_ARCH_QCS405), y)
-		include $(AUDIO_ROOT)/config/qcs405auto.conf
+	ifeq ($(CONFIG_ARCH_SM6150), y)
+		include $(AUDIO_ROOT)/config/sm6150auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/qcs405autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
+	endif
+	ifeq ($(CONFIG_ARCH_TRINKET), y)
+		include $(AUDIO_ROOT)/config/trinketauto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/trinketautoconf.h
 	endif
 endif
 
@@ -46,11 +52,13 @@ UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
-############ CSRA66X0 ############
+############ TAS2562 ############
 
-# for CSRA66X0 Codec
-ifdef CONFIG_SND_SOC_CSRA66X0
-	CSRA66X0_OBJS += csra66x0.o
+# for TAS2562 Codec
+ifdef CONFIG_SND_SOC_TAS2562
+	TAS2562_OBJS := tas2562-codec.o tas2562-regmap.o
+	#TAS2562_OBJS += tas2562-regmap.o
+
 endif
 
 LINUX_INC +=	-Iinclude/linux
@@ -58,8 +66,7 @@ LINUX_INC +=	-Iinclude/linux
 INCS +=		$(COMMON_INC) \
 		$(UAPI_INC)
 
-#EXTRA_CFLAGS += $(INCS)
-ccflags-y += $(INCS)
+EXTRA_CFLAGS += $(INCS)
 
 
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
@@ -79,15 +86,14 @@ KBUILD_CPPFLAGS += $(CDEFINES)
 # AUDIO driver.  Note that we must use EXTRA_CFLAGS here so that it
 # will override the kernel settings.
 ifeq ($(call cc-option-yn, -Wmaybe-uninitialized),y)
-#EXTRA_CFLAGS += -Wmaybe-uninitialized
-ccflags-y += -Wmaybe-uninitialized
+EXTRA_CFLAGS += -Wmaybe-uninitialized
 endif
 #EXTRA_CFLAGS += -Wmissing-prototypes
 
 ifeq ($(call cc-option-yn, -Wheader-guard),y)
-#EXTRA_CFLAGS += -Wheader-guard
-ccflags-y += -Wheader-guard
+EXTRA_CFLAGS += -Wheader-guard
 endif
+
 
 ifeq ($(KERNEL_BUILD), 0)
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/ipc/Module.symvers
@@ -102,5 +108,10 @@ GCOV_PROFILE := y
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_SND_SOC_CSRA66X0) += csra66x0_dlkm.o
-csra66x0_dlkm-y := $(CSRA66X0_OBJS)
+obj-$(CONFIG_SND_SOC_TAS2562) += tas2562_dlkm.o
+tas2562_dlkm-y := $(TAS2562_OBJS)
+
+
+
+# inject some build related information
+DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"

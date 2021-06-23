@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -7573,6 +7573,9 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 #if defined(CONFIG_SND_SOC_MAX98937)
 		.codec_name = "max98927",
 		.codec_dai_name = "max98927-aif1",
+//#elif defined(CONFIG_SND_SOC_TAS2562)	
+//		.codec_name     = "tas2562.0-004c",
+//		.codec_dai_name = "tas2562 ASI1",
 #else
 		.codec_name = "msm-stub-codec.1",
               .codec_dai_name = "msm-stub-rx",
@@ -7593,6 +7596,9 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 #if defined(CONFIG_SND_SOC_MAX98937)
 		.codec_name = "max98927",
 		.codec_dai_name = "max98927-aif1",
+//#elif defined(CONFIG_SND_SOC_TAS2562)	
+//		.codec_name     = "tas2562.0-004c",
+//		.codec_dai_name = "tas2562 ASI1",
 #else
 		.codec_name = "msm-stub-codec.1",
 		.codec_dai_name = "msm-stub-tx",
