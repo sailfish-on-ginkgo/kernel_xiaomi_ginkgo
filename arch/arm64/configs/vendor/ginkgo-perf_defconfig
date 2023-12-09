@@ -806,7 +806,7 @@ CONFIG_BT_BNEP_PROTO_FILTER=y
 
 
 # hybris binder interfaces
-CONFIG_ANDROID_BINDER_DEVICES="binder,vndbinder,hwbinder,puddlejumper,vndpuddlejumper,anbox-binder,binder1,anbox-hwbinder,anbox-vndbinder"
+CONFIG_ANDROID_BINDER_DEVICES="binder,vndbinder,hwbinder,puddlejumper,hwpuddlejumper,vndpuddlejumper,anbox-binder,binder1,anbox-hwbinder,anbox-vndbinder"
 CONFIG_CGROUP_SCHEDTUNE=n
 
 # hybris rndis
