@@ -133,39 +133,26 @@ bool fts_ts_is_gesture_mode(void)
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
+static int double_tap_detected;
+
 static ssize_t fts_gesture_show(
     struct device *dev, struct device_attribute *attr, char *buf)
 {
-    int count = 0;
-    u8 val = 0;
-    struct input_dev *input_dev = fts_data->input_dev;
-
-    mutex_lock(&input_dev->mutex);
-    fts_read_reg(FTS_REG_GESTURE_EN, &val);
-    count = snprintf(buf, PAGE_SIZE, "Gesture Mode:%s\n",
-                     fts_gesture_data.mode ? "On" : "Off");
-    count += snprintf(buf + count, PAGE_SIZE, "Reg(0xD0)=%d\n", val);
-    mutex_unlock(&input_dev->mutex);
-
-    return count;
+    int val = double_tap_detected;
+    double_tap_detected = 0;
+    return snprintf(buf, PAGE_SIZE, "%d\n", val);
 }
 
 static ssize_t fts_gesture_store(
     struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct input_dev *input_dev = fts_data->input_dev;
-    mutex_lock(&input_dev->mutex);
-    if (FTS_SYSFS_ECHO_ON(buf)) {
-        FTS_DEBUG("enable gesture");
-        set_lcd_reset_gpio_keep_high(true);
-        fts_gesture_data.mode = ENABLE;
-    } else if (FTS_SYSFS_ECHO_OFF(buf)) {
-        FTS_DEBUG("disable gesture");
-        set_lcd_reset_gpio_keep_high(false);
-        fts_gesture_data.mode = DISABLE;
-    }
-    mutex_unlock(&input_dev->mutex);
+    if (FTS_SYSFS_ECHO_ON(buf))
+        lct_fts_tp_gesture_callback(true);
+    else if (FTS_SYSFS_ECHO_OFF(buf))
+        lct_fts_tp_gesture_callback(false);
+
+    double_tap_detected = 0;
 
     return count;
 }
@@ -205,6 +192,30 @@ static ssize_t fts_gesture_buf_store(
 }
 
 
+static ssize_t double_tap_wake_show(struct device *dev,
+        struct device_attribute *attr, char *buf)
+{
+    int val = double_tap_detected;
+    double_tap_detected = 0;
+    return snprintf(buf, PAGE_SIZE, "%d\n", val);
+}
+
+static ssize_t double_tap_wake_store(struct device *dev,
+        struct device_attribute *attr, const char *buf, size_t count)
+{
+    unsigned long val;
+
+    if (kstrtoul(buf, 0, &val))
+        return -EINVAL;
+
+    lct_fts_tp_gesture_callback(!!val);
+
+    double_tap_detected = 0;
+
+    return count;
+}
+static DEVICE_ATTR_RW(double_tap_wake);
+
 /* sysfs gesture node
  *   read example: cat  fts_gesture_mode       ---read gesture mode
  *   write example:echo 1 > fts_gesture_mode   --- write gesture mode to 1
@@ -219,6 +230,7 @@ static DEVICE_ATTR(fts_gesture_buf, S_IRUGO | S_IWUSR,
                    fts_gesture_buf_show, fts_gesture_buf_store);
 
 static struct attribute *fts_gesture_mode_attrs[] = {
+    &dev_attr_double_tap_wake.attr,
     &dev_attr_fts_gesture_mode.attr,
     &dev_attr_fts_gesture_buf.attr,
     NULL,
@@ -262,6 +274,7 @@ static void fts_gesture_report(struct input_dev *input_dev, int gesture_id)
         break;
     case GESTURE_DOUBLECLICK:
         gesture = KEY_GESTURE_U;
+        double_tap_detected = 1;
         break;
     case GESTURE_O:
         gesture = KEY_GESTURE_O;

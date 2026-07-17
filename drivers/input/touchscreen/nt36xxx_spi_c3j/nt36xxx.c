@@ -96,6 +96,7 @@ static void nvt_ts_late_resume(struct early_suspend *h);
 #if WAKEUP_GESTURE
 extern void set_lcd_reset_gpio_keep_high(bool en);
 static int lct_nvt_tp_gesture_callback(bool flag);
+static bool double_tap_detected;
 #endif
 
 uint32_t ENG_RST_ADDR  = 0x7FFF80;
@@ -1058,6 +1059,7 @@ void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
 		case GESTURE_DOUBLE_CLICK:
 			NVT_LOG("Gesture : Double Click.\n");
 			keycode = gesture_key_array[3];
+			double_tap_detected = true;
 			break;
 		case GESTURE_WORD_Z:
 			NVT_LOG("Gesture : Word-Z.\n");
@@ -1810,6 +1812,9 @@ Description:
 return:
 	Executive outcomes. 0---succeed. negative---failed
 *******************************************************/
+#if WAKEUP_GESTURE
+static struct attribute_group nvt_attr_group;
+#endif
 static int32_t nvt_ts_probe(struct spi_device *client)
 {
 	int32_t ret = 0;
@@ -2097,6 +2102,12 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	} else {
 		NVT_LOG("init_lct_tp_gesture Succeeded!\n");
 	}
+
+	ret = sysfs_create_group(&ts->client->dev.kobj, &nvt_attr_group);
+	if (ret < 0) {
+		NVT_ERR("create double_tap_wake sysfs group failed!\n");
+		goto err_sysfs_create_group_failed;
+	}
 #endif
 
 #if LCT_TP_GRIP_AREA_EN
@@ -2199,6 +2210,8 @@ err_init_lct_tp_grip_area_failed:
 uninit_lct_tp_grip_area();
 #endif
 #if WAKEUP_GESTURE
+err_sysfs_create_group_failed:
+	sysfs_remove_group(&ts->client->dev.kobj, &nvt_attr_group);
 err_init_lct_tp_gesture_failed:
 uninit_lct_tp_gesture();
 #endif
@@ -2306,6 +2319,7 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 	uninit_lct_tp_grip_area();
 #endif
 #if WAKEUP_GESTURE
+	sysfs_remove_group(&ts->client->dev.kobj, &nvt_attr_group);
 	uninit_lct_tp_gesture();
 #endif
 	uninit_lct_tp_info();
@@ -2613,6 +2627,39 @@ int lct_nvt_tp_gesture_callback(bool flag)
 	}
 	return 0;
 }
+
+static ssize_t double_tap_wake_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	int val = double_tap_detected;
+	double_tap_detected = false;
+	return snprintf(buf, PAGE_SIZE, "%d\n", val);
+}
+
+static ssize_t double_tap_wake_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	unsigned long val;
+
+	if (kstrtoul(buf, 0, &val))
+		return -EINVAL;
+
+	lct_nvt_tp_gesture_callback(!!val);
+
+	double_tap_detected = false;
+
+	return count;
+}
+static DEVICE_ATTR_RW(double_tap_wake);
+
+static struct attribute *nvt_attrs[] = {
+	&dev_attr_double_tap_wake.attr,
+	NULL,
+};
+
+static struct attribute_group nvt_attr_group = {
+	.attrs = nvt_attrs,
+};
 #endif
 
 #if defined(CONFIG_FB)
