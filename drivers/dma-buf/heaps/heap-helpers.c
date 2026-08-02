@@ -89,7 +89,7 @@ struct dma_heaps_attachment {
 	struct list_head list;
 };
 
-static int dma_heap_attach(struct dma_buf *dmabuf,
+static int dma_heap_attach(struct dma_buf *dmabuf, struct device *dev,
 			   struct dma_buf_attachment *attachment)
 {
 	struct dma_heaps_attachment *a;
@@ -109,7 +109,7 @@ static int dma_heap_attach(struct dma_buf *dmabuf,
 		return ret;
 	}
 
-	a->dev = attachment->dev;
+	a->dev = dev;
 	INIT_LIST_HEAD(&a->list);
 
 	attachment->priv = a;
