@@ -362,17 +362,19 @@ extern int nvt_ts_recovery_callback(void);
 
 static void prim_panel_off_delayed_work(struct work_struct *work)
 {
-	mutex_lock(&gbridge->base.lock);
-	if (atomic_read(&prim_panel_is_on)) {
-#if (defined CONFIG_TOUCHSCREEN_XIAOMI_C3J)
-		nvt_ts_recovery_callback();
-#endif
-		dsi_bridge_post_disable(&gbridge->base);
-		__pm_relax(&prim_panel_wakelock);
-		mutex_unlock(&gbridge->base.lock);
-		return;
-	}
-	mutex_unlock(&gbridge->base.lock);
+	/*
+	 * Fix for Huaxing (ft8719) panel bootloop / kernel panic in
+	 * prim_panel_off_delayed_work (see sailfish-on-ginkgo/main#16).
+	 * On Huaxing devices the Novatek touch driver never probes, so the
+	 * nvt_ts_recovery_callback() dereference below crashes ~18-20s after
+	 * boot when the delayed work fires. The binary workaround was to patch
+	 * the function entry with RET (c0 03 5f d6). Disable the delayed panel
+	 * off path at source level instead; the normal DRM atomic
+	 * enable/disable path is unaffected. Fingerprint pre-light
+	 * (dsi_bridge_interface_enable) will simply keep the panel on until
+	 * the next regular commit.
+	 */
+	return;
 }
 
 static void dsi_bridge_mode_set(struct drm_bridge *bridge,

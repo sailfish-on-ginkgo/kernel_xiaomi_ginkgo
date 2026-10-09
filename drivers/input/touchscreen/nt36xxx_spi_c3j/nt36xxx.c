@@ -17,6 +17,7 @@
  *
  */
 #include <linux/kernel.h>
+#include <linux/errno.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
@@ -186,6 +187,12 @@ typedef int(*touchpanel_recovery_cb_p_t)(void);
 /* Fix Touch/Fingerprint wakeup crash issue */
 int nvt_ts_recovery_callback(void)
 {
+	/* Huaxing (ft8719) panels never probe this driver, so ts stays NULL.
+	 * Guard against NULL dereference which panics in
+	 * prim_panel_off_delayed_work (sailfish-on-ginkgo/main#16).
+	 */
+	if (!ts || !ts->client)
+		return -ENODEV;
 	if (unlikely(bTouchIsAwake)) {
 		NVT_ERR("touch is awake, can not to set\n");
 		return -1;
